@@ -599,7 +599,13 @@ export function SubscriptionsPanel({
                         </span>
                         <span className="text-xs text-fg-45">
                           {source.kind === "remote" ? "远程" : "手动"}
-                          {source.enabled ? "" : " · 已停用"}
+                          {!source.enabledGenerate && !source.enabledRefresh
+                            ? " · 已停用"
+                            : !source.enabledGenerate
+                              ? " · 生成已停用"
+                              : !source.enabledRefresh
+                                ? " · 刷新已停用"
+                                : ""}
                         </span>
                       </button>
                     </MotionItem>

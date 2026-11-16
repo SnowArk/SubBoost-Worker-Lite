@@ -120,6 +120,8 @@ function buildFallbackSourceStats(state: AppState): DashboardSourceStat[] {
       name: source.name,
       kind: source.kind,
       enabled: source.enabled,
+      enabledRefresh: source.enabledRefresh,
+      enabledGenerate: source.enabledGenerate,
       nodeCount: status?.nodeCount ?? 0,
       renamedCount: Object.keys(source.nodeRenames ?? {}).length,
       fetchedAt: null,
@@ -186,7 +188,7 @@ export function DashboardPanel({
     if (!sourceNodes[sourceId]) void loadSourceNodes(sourceId);
   };
 
-  const enabledSources = stats?.sources.enabled ?? state.sources.filter((item) => item.enabled).length;
+  const enabledSources = stats?.sources.enabled ?? state.sources.filter((item) => item.enabledGenerate ?? item.enabled).length;
   const totalSources = stats?.sources.total ?? state.sources.length;
   const remoteSources = stats?.sources.remote ?? state.sources.filter((item) => item.kind === "remote").length;
   const manualSources = stats?.sources.manual ?? state.sources.filter((item) => item.kind === "manual").length;
@@ -417,7 +419,13 @@ export function DashboardPanel({
                           <span className="block truncate text-sm text-fg-80">{item.name}</span>
                           <span className="block text-2xs text-fg-45">
                             {item.kind === "remote" ? "远程" : "手动"}
-                            {item.enabled ? "" : " · 已停用"}
+                            {!item.enabledGenerate && !item.enabledRefresh
+                              ? " · 已停用"
+                              : !item.enabledGenerate
+                                ? " · 生成已停用"
+                                : !item.enabledRefresh
+                                  ? " · 刷新已停用"
+                                  : ""}
                             {item.renamedCount > 0 ? ` · 改名 ${item.renamedCount}` : ""}
                           </span>
                         </span>

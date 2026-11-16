@@ -11,6 +11,8 @@ export type SourceDto = {
   url?: string;
   manualText?: string;
   enabled: boolean;
+  enabledRefresh: boolean;
+  enabledGenerate: boolean;
   userAgent?: string;
   nodeRenames?: NodeRenames;
   createdAt: string;
@@ -93,6 +95,8 @@ export type SourceInput = {
   url?: string;
   manualText?: string;
   enabled?: boolean;
+  enabledRefresh?: boolean;
+  enabledGenerate?: boolean;
   userAgent?: string;
   nodeRenames?: NodeRenames;
 };
@@ -121,6 +125,8 @@ export type SourceNodesResponse = {
     name: string;
     kind: SourceKind;
     enabled: boolean;
+    enabledRefresh: boolean;
+    enabledGenerate: boolean;
     nodeRenames: NodeRenames;
   };
   fetchedAt: string | null;
@@ -160,6 +166,8 @@ export type DashboardSourceStat = {
   name: string;
   kind: SourceKind;
   enabled: boolean;
+  enabledRefresh: boolean;
+  enabledGenerate: boolean;
   nodeCount: number;
   renamedCount: number;
   fetchedAt: string | null;

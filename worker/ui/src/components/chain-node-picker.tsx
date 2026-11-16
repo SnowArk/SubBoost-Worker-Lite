@@ -106,9 +106,9 @@ export function ChainNodePicker({
 
   return (
     <div className="space-y-2">
-      {nodeSource.enabled === false ? (
+      {(nodeSource.enabledGenerate ?? nodeSource.enabled) === false ? (
         <InlineNote variant="plain" alert>
-          这个源已停用：可以选节点，但要先启用该源才会生成。
+          这个源已停用订阅生成：可以选节点，但要先启用该源的订阅生成才会生效。
         </InlineNote>
       ) : null}
 

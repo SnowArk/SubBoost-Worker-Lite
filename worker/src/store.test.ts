@@ -82,6 +82,40 @@ describe("createStore sources", () => {
     expect(updated.createdAt).toBe(first.createdAt);
   });
 
+  it("persists enabledRefresh and enabledGenerate and falls back to enabled", async () => {
+    const [saved] = await store.saveSources([
+      {
+        name: "split",
+        kind: "manual",
+        manualText: "ss://abc",
+        enabledRefresh: true,
+        enabledGenerate: false,
+      },
+      {
+        name: "legacy",
+        kind: "manual",
+        manualText: "ss://legacy",
+        enabled: false,
+      },
+    ]);
+    expect(saved.enabledRefresh).toBe(true);
+    expect(saved.enabledGenerate).toBe(false);
+    expect(saved.enabled).toBe(true);
+
+    const list = await store.listSources();
+    expect(list[0].enabledRefresh).toBe(true);
+    expect(list[0].enabledGenerate).toBe(false);
+    expect(list[1].enabledRefresh).toBe(false);
+    expect(list[1].enabledGenerate).toBe(false);
+    expect(list[1].enabled).toBe(false);
+
+    const summaries = await store.listSourceSummaries();
+    expect(summaries[0].enabledRefresh).toBe(true);
+    expect(summaries[0].enabledGenerate).toBe(false);
+    expect(summaries[1].enabledRefresh).toBe(false);
+    expect(summaries[1].enabledGenerate).toBe(false);
+  });
+
   it("reorders sources without changing ciphertext, timestamps, snapshot or subscription cache", async () => {
     const [first, second] = await store.saveSources([
       { name: "a", kind: "manual", manualText: "ss://a" },

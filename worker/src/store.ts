@@ -91,14 +91,20 @@ export function createStore(env: Env) {
     // 与 listSources 一致：未配置密钥时 fail closed
     requireEncryptionKey(env);
     const stored = await listStoredSources();
-    return stored.map((item) => ({
-      id: item.id,
-      kind: item.kind,
-      enabled: item.enabled,
-      ...(item.nodeRenames && Object.keys(item.nodeRenames).length > 0
-        ? { nodeRenames: item.nodeRenames }
-        : {}),
-    }));
+    return stored.map((item) => {
+      const enabledRefresh = item.enabledRefresh ?? item.enabled ?? true;
+      const enabledGenerate = item.enabledGenerate ?? item.enabled ?? true;
+      return {
+        id: item.id,
+        kind: item.kind,
+        enabled: item.enabled ?? (enabledRefresh || enabledGenerate),
+        enabledRefresh,
+        enabledGenerate,
+        ...(item.nodeRenames && Object.keys(item.nodeRenames).length > 0
+          ? { nodeRenames: item.nodeRenames }
+          : {}),
+      };
+    });
   }
 
   async function toSourceDto(stored: StoredSource): Promise<SourceDto> {
@@ -113,12 +119,16 @@ export function createStore(env: Env) {
         "源数据解密失败，请重新录入源（ENCRYPTION_KEY 可能已更换）"
       );
     }
+    const enabledRefresh = stored.enabledRefresh ?? stored.enabled ?? true;
+    const enabledGenerate = stored.enabledGenerate ?? stored.enabled ?? true;
     return {
       id: stored.id,
       name: stored.name,
       kind: stored.kind,
       ...(stored.kind === "remote" ? { url: payload } : { manualText: payload }),
-      enabled: stored.enabled,
+      enabled: stored.enabled ?? (enabledRefresh || enabledGenerate),
+      enabledRefresh,
+      enabledGenerate,
       ...(stored.userAgent ? { userAgent: stored.userAgent } : {}),
       ...(stored.nodeRenames && Object.keys(stored.nodeRenames).length > 0
         ? { nodeRenames: stored.nodeRenames }
@@ -150,12 +160,17 @@ export function createStore(env: Env) {
       const payload = input.kind === "remote" ? input.url ?? "" : input.manualText ?? "";
       const nodeRenames =
         input.nodeRenames && Object.keys(input.nodeRenames).length > 0 ? input.nodeRenames : undefined;
+      const enabledRefresh = input.enabledRefresh ?? input.enabled ?? true;
+      const enabledGenerate = input.enabledGenerate ?? input.enabled ?? true;
+      const enabled = input.enabled ?? (enabledRefresh || enabledGenerate);
       stored.push({
         id,
         name: input.name,
         kind: input.kind,
         payloadEnc: await encryptString(payload, secret),
-        enabled: input.enabled ?? true,
+        enabled,
+        enabledRefresh,
+        enabledGenerate,
         ...(input.userAgent ? { userAgent: input.userAgent } : {}),
         ...(nodeRenames ? { nodeRenames } : {}),
         createdAt: previous?.createdAt ?? now,

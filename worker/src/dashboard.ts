@@ -8,6 +8,8 @@ export type DashboardSourceStat = {
   name: string;
   kind: SourceDto["kind"];
   enabled: boolean;
+  enabledRefresh: boolean;
+  enabledGenerate: boolean;
   nodeCount: number;
   renamedCount: number;
   fetchedAt: string | null;
@@ -57,11 +59,15 @@ function summarizeSource(
 ): DashboardSourceStat {
   const nodes = snapshot?.nodes ?? [];
   const statusItem = status?.sources.find((item) => item.sourceId === source.id);
+  const enabledRefresh = source.enabledRefresh ?? source.enabled ?? true;
+  const enabledGenerate = source.enabledGenerate ?? source.enabled ?? true;
   return {
     sourceId: source.id,
     name: source.name,
     kind: source.kind,
-    enabled: source.enabled,
+    enabled: source.enabled ?? (enabledRefresh || enabledGenerate),
+    enabledRefresh,
+    enabledGenerate,
     nodeCount: nodes.length,
     renamedCount: countRenamedNodes(nodes, source.nodeRenames),
     fetchedAt: snapshot?.fetchedAt ?? null,
@@ -82,7 +88,7 @@ export function buildDashboardStats(input: BuildDashboardStatsInput): DashboardS
     summarizeSource(source, snapshots.get(source.id) ?? null, status)
   );
 
-  const enabledStats = sourceStats.filter((item) => item.enabled);
+  const enabledStats = sourceStats.filter((item) => item.enabledGenerate);
   const totalNodes = enabledStats.reduce((sum, item) => sum + item.nodeCount, 0);
   const renamedNodes = enabledStats.reduce((sum, item) => sum + item.renamedCount, 0);
 
@@ -115,7 +121,7 @@ export function buildDashboardStats(input: BuildDashboardStatsInput): DashboardS
   if (sources.length === 0) {
     warnings.push({ level: "warning", message: "还没有添加任何源，先导入一个上游订阅或手动节点。" });
   } else if (enabledStats.length === 0) {
-    warnings.push({ level: "warning", message: "所有源都已停用，订阅将没有可用节点。" });
+    warnings.push({ level: "warning", message: "所有源都已停用订阅生成，订阅将没有可用节点。" });
   }
   if (subscriptions.length === 0 && sources.length > 0) {
     warnings.push({ level: "warning", message: "还没有订阅链接，创建一条后即可导入客户端。" });
@@ -126,11 +132,18 @@ export function buildDashboardStats(input: BuildDashboardStatsInput): DashboardS
         level: "error",
         message: `源「${item.name}」最近刷新失败${item.error ? `：${item.error}` : ""}`,
       });
-    } else if (item.enabled && item.nodeCount === 0 && item.fetchedAt === null) {
-      warnings.push({
-        level: "warning",
-        message: `源「${item.name}」还没有节点快照，订阅首次访问时会即时抓取。`,
-      });
+    } else if (item.enabledGenerate && item.nodeCount === 0 && item.fetchedAt === null) {
+      if (item.enabledRefresh) {
+        warnings.push({
+          level: "warning",
+          message: `源「${item.name}」还没有节点快照，订阅首次访问时会即时抓取。`,
+        });
+      } else {
+        warnings.push({
+          level: "warning",
+          message: `源「${item.name}」已启用订阅生成但未启用刷新，且没有节点快照。`,
+        });
+      }
     }
   }
   for (const item of status?.subscriptions ?? []) {

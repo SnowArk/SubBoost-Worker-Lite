@@ -141,8 +141,44 @@ describe("router sources", () => {
       h.deps
     );
     expect(response.status).toBe(200);
-    const body = (await response.json()) as { sources: Array<{ url?: string }> };
+    const body = (await response.json()) as { sources: Array<{ url?: string; enabledRefresh: boolean; enabledGenerate: boolean }> };
     expect(body.sources[0].url).toBe("https://example.com/sub?token=x");
+    expect(body.sources[0].enabledRefresh).toBe(true);
+    expect(body.sources[0].enabledGenerate).toBe(true);
+  });
+
+  it("saves sources with custom enabledRefresh and enabledGenerate", async () => {
+    const h = createHarness();
+    const response = await route(
+      apiRequest("/api/sources", {
+        method: "PUT",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          sources: [
+            {
+              name: "custom-toggles",
+              kind: "remote",
+              url: "https://example.com/sub?token=x",
+              enabledRefresh: false,
+              enabledGenerate: true,
+            },
+          ],
+        }),
+      }),
+      h.env,
+      h.deps
+    );
+    expect(response.status).toBe(200);
+    const body = (await response.json()) as { sources: Array<{ enabled: boolean; enabledRefresh: boolean; enabledGenerate: boolean }> };
+    expect(body.sources[0].enabledRefresh).toBe(false);
+    expect(body.sources[0].enabledGenerate).toBe(true);
+    expect(body.sources[0].enabled).toBe(true);
+
+    const stateRes = await route(apiRequest("/api/state"), h.env, h.deps);
+    expect(stateRes.status).toBe(200);
+    const stateBody = (await stateRes.json()) as { sources: Array<{ enabled: boolean; enabledRefresh: boolean; enabledGenerate: boolean }> };
+    expect(stateBody.sources[0].enabledRefresh).toBe(false);
+    expect(stateBody.sources[0].enabledGenerate).toBe(true);
   });
 
   it("rejects manual text that parses to zero nodes", async () => {

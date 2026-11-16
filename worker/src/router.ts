@@ -147,6 +147,12 @@ async function validateSources(input: unknown): Promise<SourceInput[]> {
     }
 
     const nodeRenames = sanitizeNodeRenames(item.nodeRenames);
+    const enabledRefresh =
+      item.enabledRefresh !== undefined ? Boolean(item.enabledRefresh) : item.enabled !== false;
+    const enabledGenerate =
+      item.enabledGenerate !== undefined ? Boolean(item.enabledGenerate) : item.enabled !== false;
+    const enabled = item.enabled !== undefined ? Boolean(item.enabled) : (enabledRefresh || enabledGenerate);
+
     if (kind === "remote") {
       const url = stringField(item.url).trim();
       const validation = validatePublicHttpUrl(url);
@@ -158,7 +164,9 @@ async function validateSources(input: unknown): Promise<SourceInput[]> {
         name,
         kind,
         url,
-        enabled: item.enabled !== false,
+        enabled,
+        enabledRefresh,
+        enabledGenerate,
         ...(userAgent ? { userAgent } : {}),
         ...(nodeRenames ? { nodeRenames } : {}),
       });
@@ -185,7 +193,9 @@ async function validateSources(input: unknown): Promise<SourceInput[]> {
       name,
       kind,
       manualText,
-      enabled: item.enabled !== false,
+      enabled,
+      enabledRefresh,
+      enabledGenerate,
       ...(userAgent ? { userAgent } : {}),
       ...(nodeRenames ? { nodeRenames } : {}),
     });
@@ -322,6 +332,8 @@ async function handleApi(request: Request, env: Env, deps: RouterDeps): Promise<
         name: source.name,
         kind: source.kind,
         enabled: source.enabled,
+        enabledRefresh: source.enabledRefresh,
+        enabledGenerate: source.enabledGenerate,
         nodeRenames: source.nodeRenames ?? {},
       },
       fetchedAt: snapshot?.fetchedAt ?? null,

@@ -52,6 +52,8 @@ type Draft = {
   manualText: string;
   userAgent: string;
   enabled: boolean;
+  enabledRefresh: boolean;
+  enabledGenerate: boolean;
   nodeRenames: NodeRenames;
 };
 
@@ -73,11 +75,15 @@ function emptyDraft(): Draft {
     manualText: "",
     userAgent: "",
     enabled: true,
+    enabledRefresh: true,
+    enabledGenerate: true,
     nodeRenames: {},
   };
 }
 
 function toDraft(source: SourceDto): Draft {
+  const enabledRefresh = source.enabledRefresh ?? source.enabled ?? true;
+  const enabledGenerate = source.enabledGenerate ?? source.enabled ?? true;
   return {
     id: source.id,
     name: source.name,
@@ -85,18 +91,24 @@ function toDraft(source: SourceDto): Draft {
     url: source.url ?? "",
     manualText: source.manualText ?? "",
     userAgent: source.userAgent ?? "",
-    enabled: source.enabled,
+    enabled: source.enabled ?? (enabledRefresh || enabledGenerate),
+    enabledRefresh,
+    enabledGenerate,
     nodeRenames: { ...(source.nodeRenames ?? {}) },
   };
 }
 
 function toInput(source: SourceDto): SourceInput {
+  const enabledRefresh = source.enabledRefresh ?? source.enabled ?? true;
+  const enabledGenerate = source.enabledGenerate ?? source.enabled ?? true;
   return {
     id: source.id,
     name: source.name,
     kind: source.kind,
     ...(source.kind === "remote" ? { url: source.url } : { manualText: source.manualText }),
-    enabled: source.enabled,
+    enabled: source.enabled ?? (enabledRefresh || enabledGenerate),
+    enabledRefresh,
+    enabledGenerate,
     ...(source.userAgent ? { userAgent: source.userAgent } : {}),
     ...(source.nodeRenames && Object.keys(source.nodeRenames).length > 0
       ? { nodeRenames: source.nodeRenames }
@@ -198,7 +210,9 @@ export function SourcesPanel({ state, onSave, onReorder, onParseNodes, onLoadNod
       ...(draft.id ? { id: draft.id } : {}),
       name: draft.name.trim(),
       kind: draft.kind,
-      enabled: draft.enabled,
+      enabled: draft.enabledRefresh || draft.enabledGenerate,
+      enabledRefresh: draft.enabledRefresh,
+      enabledGenerate: draft.enabledGenerate,
       ...(draft.userAgent.trim() ? { userAgent: draft.userAgent.trim() } : {}),
       ...(renames ? { nodeRenames: renames } : {}),
       ...(draft.kind === "remote" ? { url: draft.url.trim() } : { manualText: draft.manualText }),
@@ -351,8 +365,11 @@ export function SourcesPanel({ state, onSave, onReorder, onParseNodes, onLoadNod
                         <Badge variant="secondary">
                           {source.kind === "remote" ? "远程" : "手动"}
                         </Badge>
-                        <Badge variant={source.enabled ? "success" : "outline"}>
-                          {source.enabled ? "启用" : "停用"}
+                        <Badge variant={source.enabledRefresh ? "success" : "outline"}>
+                          {source.enabledRefresh ? "刷新开启" : "刷新关闭"}
+                        </Badge>
+                        <Badge variant={source.enabledGenerate ? "success" : "outline"}>
+                          {source.enabledGenerate ? "生成开启" : "生成关闭"}
                         </Badge>
                         {status?.ok === false ? <Badge variant="destructive">失败</Badge> : null}
                       </div>
@@ -484,12 +501,20 @@ export function SourcesPanel({ state, onSave, onReorder, onParseNodes, onLoadNod
               />
             </FormField>
 
-            <SwitchField
-              label="启用该源"
-              description="停用后刷新与订阅生成都会跳过它。"
-              checked={draft.enabled}
-              onCheckedChange={(checked) => setDraft({ ...draft, enabled: checked })}
-            />
+            <div className="space-y-3 rounded-xl border border-ink/10 bg-ink/5 p-3">
+              <SwitchField
+                label="启用刷新"
+                description="开启后定时任务与手动刷新会抓取此源并更新快照。"
+                checked={draft.enabledRefresh}
+                onCheckedChange={(checked) => setDraft({ ...draft, enabledRefresh: checked })}
+              />
+              <SwitchField
+                label="启用订阅生成"
+                description="开启后生成客户端订阅配置与预览时包含此源的节点。"
+                checked={draft.enabledGenerate}
+                onCheckedChange={(checked) => setDraft({ ...draft, enabledGenerate: checked })}
+              />
+            </div>
 
             {error ? (
               <p className="text-sm text-danger-note-fg" role="alert">

@@ -11,11 +11,14 @@ const VMESS = "vmess://eyJ2IjoiMiIsInBzIjoiVk0iLCJhZGQiOiJleGFtcGxlLmNvbSIsInBvc
 const CLASH_YAML = `proxies:\n  - name: YAMLNode\n    type: ss\n    server: example.com\n    port: 8388\n    cipher: aes-256-gcm\n    password: secret\n`;
 
 function source(overrides: Partial<SourceDto>): SourceDto {
+  const enabled = overrides.enabled ?? true;
   return {
     id: "s1",
     name: "src",
     kind: "remote",
-    enabled: true,
+    enabled,
+    enabledRefresh: overrides.enabledRefresh ?? enabled,
+    enabledGenerate: overrides.enabledGenerate ?? enabled,
     createdAt: new Date(0).toISOString(),
     updatedAt: new Date(0).toISOString(),
     ...overrides,

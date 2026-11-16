@@ -18,6 +18,8 @@ const SOURCES: SourceDto[] = [
     kind: "remote",
     url: "https://example.com/sub?token=<token>",
     enabled: true,
+    enabledRefresh: true,
+    enabledGenerate: true,
     createdAt: "2026-10-01T00:00:00.000Z",
     updatedAt: "2026-10-01T00:00:00.000Z",
   },
@@ -26,6 +28,8 @@ const SOURCES: SourceDto[] = [
     name: "示例源 B（已停用）",
     kind: "manual",
     enabled: false,
+    enabledRefresh: false,
+    enabledGenerate: false,
     createdAt: "2026-10-01T00:00:00.000Z",
     updatedAt: "2026-10-01T00:00:00.000Z",
   },
@@ -51,7 +55,7 @@ const CONFIG: Record<string, unknown> = {
 
 function nodesResponse(sourceId: string, name: string, keys: string[]): SourceNodesResponse {
   return {
-    source: { id: sourceId, name, kind: "manual", enabled: true, nodeRenames: {} },
+    source: { id: sourceId, name, kind: "manual", enabled: true, enabledRefresh: true, enabledGenerate: true, nodeRenames: {} },
     fetchedAt: "2026-10-01T00:00:00.000Z",
     nodeCount: keys.length,
     renamedCount: 0,

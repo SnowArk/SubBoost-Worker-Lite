@@ -44,6 +44,8 @@ describe("演示模式后端", () => {
 
     const state = await readJson<AppState>(response);
     expect(state.sources.map((source) => source.enabled)).toEqual([true, true, false]);
+    expect(state.sources.map((source) => source.enabledRefresh)).toEqual([true, true, false]);
+    expect(state.sources.map((source) => source.enabledGenerate)).toEqual([true, true, false]);
     expect(state.sources[0].manualText).toContain("ss://");
     // 演示源全部使用 example.com 保留域名，公开预览站不含可识别信息
     expect(state.sources[0].manualText).toContain("example.com");

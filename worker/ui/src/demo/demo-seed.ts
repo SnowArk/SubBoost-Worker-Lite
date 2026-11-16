@@ -73,6 +73,8 @@ export const DEMO_SOURCES: SourceInput[] = [
     kind: "manual",
     manualText: PRIMARY_TEXT,
     enabled: true,
+    enabledRefresh: true,
+    enabledGenerate: true,
     ...(PRIMARY_RENAMES ? { nodeRenames: PRIMARY_RENAMES } : {}),
   },
   {
@@ -80,12 +82,16 @@ export const DEMO_SOURCES: SourceInput[] = [
     kind: "manual",
     manualText: BACKUP_TEXT,
     enabled: true,
+    enabledRefresh: true,
+    enabledGenerate: true,
   },
   {
     name: "演示停用线路（未启用）",
     kind: "manual",
     manualText: DISABLED_NODES.join("\n"),
     enabled: false,
+    enabledRefresh: false,
+    enabledGenerate: false,
   },
 ];
 

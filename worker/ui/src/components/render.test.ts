@@ -27,6 +27,8 @@ const STATE: AppState = {
       kind: "remote",
       url: "https://example.com/sub?token=secret",
       enabled: true,
+      enabledRefresh: true,
+      enabledGenerate: true,
       createdAt: "2026-10-01T00:00:00.000Z",
       updatedAt: "2026-10-01T00:00:00.000Z",
     },
@@ -36,6 +38,8 @@ const STATE: AppState = {
       kind: "manual",
       manualText: "ss://abc",
       enabled: false,
+      enabledRefresh: false,
+      enabledGenerate: false,
       createdAt: "2026-10-01T00:00:00.000Z",
       updatedAt: "2026-10-01T00:00:00.000Z",
     },
@@ -165,6 +169,10 @@ describe("admin UI rendering", () => {
     expect(html).toContain("手动节点");
     expect(html).toContain("远程");
     expect(html).toContain("手动");
+    expect(html).toContain("刷新开启");
+    expect(html).toContain("生成开启");
+    expect(html).toContain("刷新关闭");
+    expect(html).toContain("生成关闭");
   });
   it("exposes a labelled drag handle on every card across the three lists", () => {
     const sources = renderToStaticMarkup(
@@ -519,6 +527,8 @@ const STATS: DashboardStats = {
       name: "机场 A",
       kind: "remote",
       enabled: true,
+      enabledRefresh: true,
+      enabledGenerate: true,
       nodeCount: 12,
       renamedCount: 2,
       fetchedAt: "2026-10-12T00:00:00.000Z",
@@ -530,6 +540,8 @@ const STATS: DashboardStats = {
       name: "手动节点",
       kind: "manual",
       enabled: false,
+      enabledRefresh: false,
+      enabledGenerate: false,
       nodeCount: 0,
       renamedCount: 0,
       fetchedAt: null,
@@ -613,7 +625,15 @@ describe("dashboard and node rename rendering", () => {
 });
 
 const SOURCE_NODES: SourceNodesResponse = {
-  source: { id: "s1", name: "机场 A", kind: "remote", enabled: true, nodeRenames: {} },
+  source: {
+    id: "s1",
+    name: "机场 A",
+    kind: "remote",
+    enabled: true,
+    enabledRefresh: true,
+    enabledGenerate: true,
+    nodeRenames: {},
+  },
   fetchedAt: "2026-10-12T00:00:00.000Z",
   nodeCount: 2,
   renamedCount: 1,

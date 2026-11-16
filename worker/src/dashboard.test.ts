@@ -5,12 +5,15 @@ import { nodeRenameKey } from "./node-renames";
 import type { SnapshotRecord, SourceDto, StatusRecord, SubscriptionDto } from "./types";
 
 function source(overrides: Partial<SourceDto> = {}): SourceDto {
+  const enabled = overrides.enabled ?? true;
   return {
     id: "s1",
     name: "机场 A",
     kind: "remote",
     url: "https://example.com/sub",
-    enabled: true,
+    enabled,
+    enabledRefresh: overrides.enabledRefresh ?? enabled,
+    enabledGenerate: overrides.enabledGenerate ?? enabled,
     createdAt: "2026-10-01T00:00:00.000Z",
     updatedAt: "2026-10-01T00:00:00.000Z",
     ...overrides,
@@ -111,6 +114,28 @@ describe("buildDashboardStats", () => {
     expect(stats.nodes.protocols).toEqual([{ type: "ss", count: 1 }]);
     expect(stats.sourceStats[1]).toMatchObject({ enabled: false, nodeCount: 2 });
     expect(stats.lastRun).toBeNull();
+  });
+
+  it("excludes sources with enabledGenerate=false from node totals and protocol mix", () => {
+    const s1 = source({ id: "s1", enabledRefresh: true, enabledGenerate: true });
+    const s2 = source({ id: "s2", name: "只刷新不生成", enabledRefresh: true, enabledGenerate: false });
+    const snapshots = new Map<string, SnapshotRecord | null>([
+      ["s1", snapshot("s1", [node("a", "ss", 8001)])],
+      ["s2", snapshot("s2", [node("b", "trojan", 8443)])],
+    ]);
+
+    const stats = buildDashboardStats({
+      sources: [s1, s2],
+      subscriptions: [],
+      status: null,
+      snapshots,
+      generatedAt: "2026-10-12T00:00:00.000Z",
+    });
+
+    expect(stats.sources.enabled).toBe(1);
+    expect(stats.nodes.total).toBe(1);
+    expect(stats.nodes.protocols).toEqual([{ type: "ss", count: 1 }]);
+    expect(stats.sourceStats[1]).toMatchObject({ enabledRefresh: true, enabledGenerate: false, nodeCount: 1 });
   });
 
   it("counts renamed nodes per source", () => {

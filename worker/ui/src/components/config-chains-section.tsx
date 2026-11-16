@@ -99,7 +99,10 @@ export function ConfigChainsSection({
   const chains = React.useMemo(() => readChains(config), [config]);
   const merged = React.useMemo(() => mergePreviewStatus(chains, previewChains), [chains, previewChains]);
   const legacyGroups = React.useMemo(() => readLegacyDialerGroups(config), [config]);
-  const enabledSources = React.useMemo(() => sources.filter((source) => source.enabled), [sources]);
+  const enabledSources = React.useMemo(
+    () => sources.filter((source) => source.enabledGenerate ?? source.enabled),
+    [sources]
+  );
   const sourceNames = React.useMemo(
     () => new Map(sources.map((source) => [source.id, source.name])),
     [sources]
@@ -678,10 +681,16 @@ function NodeSidePanel({
                 variant={checked ? "default" : "secondary"}
                 aria-pressed={checked}
                 onClick={() => toggleSource(source.id)}
-                title={source.enabled ? source.name : `${source.name}（已停用）`}
+                title={
+                  (source.enabledGenerate ?? source.enabled)
+                    ? source.name
+                    : `${source.name}（生成已停用）`
+                }
               >
                 <span className="break-all">{source.name}</span>
-                {source.enabled ? null : <span className="text-2xs opacity-70">停用</span>}
+                {(source.enabledGenerate ?? source.enabled) ? null : (
+                  <span className="text-2xs opacity-70">生成停用</span>
+                )}
               </Button>
             );
           })}

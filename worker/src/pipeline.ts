@@ -140,10 +140,16 @@ export function selectSubscriptionChains(
   return normalizeProxyChains(config.proxyChains).filter((chain) => wanted.has(chain.id));
 }
 
-type SourceLike = { id: string; enabled: boolean; nodeRenames?: NodeRenames };
+type SourceLike = {
+  id: string;
+  enabled: boolean;
+  enabledRefresh?: boolean;
+  enabledGenerate?: boolean;
+  nodeRenames?: NodeRenames;
+};
 
 /**
- * 订阅实际用到的源：订阅勾选的源（留空 = 全部已启用源）；
+ * 订阅实际用到的源：订阅勾选的源（留空 = 全部已启用订阅生成的源）；
  * `extraIds` 是链引用节点所在的源，订阅没勾也要一起进快照，否则链的组引用会悬空。
  */
 function targetSources<T extends SourceLike>(
@@ -151,7 +157,9 @@ function targetSources<T extends SourceLike>(
   sources: T[],
   extraIds: string[]
 ): T[] {
-  const enabled = sources.filter((source) => source.enabled);
+  const enabled = sources.filter((source) =>
+    source.enabledGenerate !== undefined ? source.enabledGenerate : source.enabled
+  );
   const byId = new Map(enabled.map((source) => [source.id, source]));
   const picked =
     sub.sourceIds.length === 0
@@ -294,6 +302,8 @@ export async function generateSubscription(
     async ({ source, index }): Promise<SnapshotRecord | null> => {
       const snapshot = existing[index];
       if (snapshot || !opts.onDemand) return snapshot;
+      const canRefresh = source.enabledRefresh !== undefined ? source.enabledRefresh : source.enabled;
+      if (!canRefresh) return null;
       // 超过预算就不再发起新的抓取，宁可返回不完整但可用的配置
       if (deps.now().getTime() > deadline) return null;
       const refreshed = await refreshSource(source, {
@@ -593,7 +603,9 @@ export async function refreshAll(
   try {
     const sources = await store.listSources();
     const subs = await store.listStoredSubscriptions();
-    const enabled = sources.filter((source) => source.enabled);
+    const enabled = sources.filter((source) =>
+      source.enabledRefresh !== undefined ? source.enabledRefresh : source.enabled
+    );
 
     const sourceResults = await runWithConcurrency(
       REFRESH_CONCURRENCY,

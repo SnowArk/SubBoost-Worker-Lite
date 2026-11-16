@@ -667,6 +667,24 @@ describe("refreshAll", () => {
     expect(bStatus?.error).toBe("deadline-exceeded");
   });
 
+  it("skips sources when enabledRefresh is false", async () => {
+    const fetchImpl = vi.fn(async (url: string) =>
+      okResponse(base64Subscription([ssNode(url, 8388)]))
+    );
+    h.deps.fetchText = fetchImpl as unknown as PipelineDeps["fetchText"];
+
+    const sources = await h.store.saveSources([
+      { name: "refresh-on", kind: "remote", url: "https://on.example.com/sub", enabledRefresh: true, enabledGenerate: true },
+      { name: "refresh-off", kind: "remote", url: "https://off.example.com/sub", enabledRefresh: false, enabledGenerate: true },
+    ]);
+    const result = await refreshAll(h.deps, { trigger: "manual" });
+    expect("status" in result).toBe(true);
+    if (!("status" in result)) return;
+    expect(fetchImpl).toHaveBeenCalledTimes(1);
+    expect(fetchImpl).toHaveBeenCalledWith("https://on.example.com/sub", expect.anything());
+    expect(result.status.sources.map((s) => s.sourceId)).toEqual([sources[0].id]);
+  });
+
   it("aggregates userinfo only when every remote source provides all fields", async () => {
     h.deps.fetchText = (async (url: string) => {
       if (url === "https://a.example.com/sub") {
@@ -1035,5 +1053,35 @@ describe("on-demand refresh", () => {
     expect(result.kind).toBe("ok");
     if (result.kind !== "ok") return;
     expect(result.cache.nodeCount).toBe(1);
+  });
+
+  it("does not fetch on-demand when enabledRefresh is false", async () => {
+    const fetchImpl = vi.fn(async (url: string) =>
+      okResponse(base64Subscription([ssNode(url, 8388)]))
+    );
+    h.deps.fetchText = fetchImpl as unknown as PipelineDeps["fetchText"];
+
+    await h.store.saveSources([
+      { name: "generate-only", kind: "remote", url: "https://no-refresh.example.com/sub", enabledRefresh: false, enabledGenerate: true },
+    ]);
+    const { token } = await h.store.createSubscription({ name: "s", sourceIds: [] });
+    const result = await getOrGenerateSubscription(h.deps, token);
+    expect(result.kind).toBe("no-nodes");
+    expect(fetchImpl).not.toHaveBeenCalled();
+  });
+
+  it("excludes source from subscription output when enabledGenerate is false", async () => {
+    const fetchImpl = vi.fn(async (url: string) =>
+      okResponse(base64Subscription([ssNode("fresh-node", 8388)]))
+    );
+    h.deps.fetchText = fetchImpl as unknown as PipelineDeps["fetchText"];
+
+    await h.store.saveSources([
+      { name: "refresh-only", kind: "remote", url: "https://refresh-only.example.com/sub", enabledRefresh: true, enabledGenerate: false },
+    ]);
+    const { token } = await h.store.createSubscription({ name: "s", sourceIds: [] });
+    const result = await getOrGenerateSubscription(h.deps, token);
+    expect(result.kind).toBe("no-nodes");
+    expect(fetchImpl).not.toHaveBeenCalled();
   });
 });

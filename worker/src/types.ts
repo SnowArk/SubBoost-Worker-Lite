@@ -58,6 +58,8 @@ export type SourceInput = {
   url?: string;
   manualText?: string;
   enabled?: boolean;
+  enabledRefresh?: boolean;
+  enabledGenerate?: boolean;
   userAgent?: string;
   // 节点显示名覆盖表（key 见 nodeRenameKey）
   nodeRenames?: NodeRenames;
@@ -70,6 +72,8 @@ export type SourceDto = {
   url?: string;
   manualText?: string;
   enabled: boolean;
+  enabledRefresh: boolean;
+  enabledGenerate: boolean;
   userAgent?: string;
   nodeRenames?: NodeRenames;
   createdAt: string;
@@ -84,6 +88,8 @@ export type SourceSummary = {
   id: string;
   kind: SourceKind;
   enabled: boolean;
+  enabledRefresh: boolean;
+  enabledGenerate: boolean;
   nodeRenames?: NodeRenames;
 };
 
@@ -93,6 +99,8 @@ export type StoredSource = {
   kind: SourceKind;
   payloadEnc: string;
   enabled: boolean;
+  enabledRefresh?: boolean;
+  enabledGenerate?: boolean;
   userAgent?: string;
   nodeRenames?: NodeRenames;
   createdAt: string;
